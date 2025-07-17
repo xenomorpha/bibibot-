@@ -1,3 +1,4 @@
-﻿aiogram==3.3.0
+aiogram==3.3.0
 aiosqlite
 apscheduler
+pydantic==1.10.13
