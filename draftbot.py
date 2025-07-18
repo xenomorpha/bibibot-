@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
@@ -15,17 +8,13 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
 import database
 import aiosqlite
-from aiogram.client.default import DefaultBotProperties
-
-
 
 # 🌿 Главное меню
 main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="🌟 Добавить задачу")],
     [KeyboardButton(text="📋 Мои задачи"), KeyboardButton(text="🏁 Выполненные")],
-    [KeyboardButton(text="📈 Прогресс"), KeyboardButton(text="📁 Проекты")]
+    [KeyboardButton(text="📈 Прогресс")]
 ], resize_keyboard=True)
-
 
 API_TOKEN = '7828773245:AAHa5Qlzbn6FeByak40UA6liCpLzwSMlqOk'
 
@@ -47,8 +36,8 @@ async def start_handler(message: Message):
     await database.create_user(message.from_user.id)
     await message.answer("Привет, я Биби 🌱 Я помогу тебе организовать свои дела и выполнять их во время. Какие у тебя есть задачи?", reply_markup=main_menu)
 
-# ✍️ Добавление задачи (с проектом)
-@dp.message(F.text.regexp(r"^.+ / \d{2}:\d{2}( / \d{2}\.\d{2})?( / #.+)?$"))
+# ✍️ Добавление задачи
+@dp.message(F.text.regexp(r"^.+ / \d{2}:\d{2}( / \d{2}\.\d{2})?$"))
 async def save_task(message: Message):
     try:
         parts = [p.strip() for p in message.text.split("/") if p.strip()]
@@ -56,72 +45,71 @@ async def save_task(message: Message):
         time_str = parts[1]
         task_time = datetime.strptime(time_str, "%H:%M").time()
 
-        task_date = datetime.now().date()
-        project_id = None
+        # Если есть дата
+        if len(parts) == 3:
+            date_str = parts[2]
+            parsed_date = datetime.strptime(date_str, "%d.%m")
+            task_date = parsed_date.replace(year=datetime.now().year).date()
+        else:
+            task_date = datetime.now().date()
 
-        # Определяем дату и проект
-        for p in parts[2:]:
-            if p.startswith("#"):
-                project_name = p.replace("#", "").strip()
-                project_id = await database.get_project_id(message.from_user.id, project_name)
-            elif "." in p:
-                task_date = datetime.strptime(p, "%d.%m").replace(year=datetime.now().year).date()
+        if "#" in parts[-1]:
+    project_part = parts[-1]
+    parts = parts[:-1]
+    project_name = project_part.replace("#", "").strip()
+    project_id = await database.get_project_id(message.from_user.id, project_name)
+else:
+    project_id = None
+    
 
-        await database.add_task(message.from_user.id, title, task_time, task_date, project_id)
+        await database.add_task(message.from_user.id, title, task_time, task_date)
 
-        msg = f"📝 Задача «{title}» добавлена на {task_date.strftime('%d.%m')} в {task_time.strftime('%H:%M')}"
-        if project_id:
-            msg += f" в проект «{project_name}»"
+await database.add_task(message.from_user.id, title, task_time, task_date, project_id)
 
-        await message.answer(msg)
-
+        await message.answer(f"📝 Задача «{title}» добавлена на {task_date.strftime('%d.%m')} в {task_time.strftime('%H:%M')}")
     except Exception as e:
-        print("❌ Ошибка сохранения задачи:", e)
-        await message.answer("Формат: Название / HH:MM / ДД.ММ / #проект (опционально)")
+        print("Ошибка сохранения задачи:", e)
 
+    
+        await message.answer("Формат: Название / HH:MM или Название / HH:MM / DD.MM")
 
+# 👇 Добавить задачку по кнопке
+@dp.message(F.text == "🌟 Добавить задачу")
+async def add_prompt(message: Message):
+    await message.answer("Напиши задачу в формате:\n<название> / HH:MM или\n<название> / HH:MM / ДД.ММ 🌸")
 
-
-@dp.message(F.text == "📁 Проекты")
-async def list_projects(message: Message):
-    projects = await database.get_user_projects_with_progress(message.from_user.id)
-    if not projects:
-        await message.answer("У тебя пока нет проектов. Хочешь создать новый?")
+# 📅 Список задач на сегодня
+@dp.message(F.text == "📋 Мои задачи")
+async def show_today_tasks(message: Message):
+    tasks = await database.get_tasks_for_user_today(message.from_user.id)
+    if not tasks:
+        await message.answer("Сегодня всё свободно. Можно отдохнуть или сделать что-то по душе 🌼")
         return
 
-    # Сортировка: по убыванию % выполненных
-    sorted_projects = sorted(projects, key=lambda x: (x[2] and x[1] and x[3] / x[2]) if x[2] else 0, reverse=True)
+    text = "<b>Твои задачи на сегодня:</b>\n\n"
+    for title, task_time in tasks:
+        text += f"🕒 <b>{task_time}</b> — {title}\n"
 
-    builder = InlineKeyboardBuilder()
-    for project_id, title, total, completed in sorted_projects:
-        percent = int((completed / total) * 100) if total else 0
-        text = f"{title} ({percent}%)"
-        builder.button(text=text, callback_data=f"project:{project_id}")
-    builder.button(text="➕ Новый проект", callback_data="new_project")
-    await message.answer("📁 <b>Твои проекты:</b>", reply_markup=builder.as_markup())
+    await message.answer(text)
 
+# ✅ Выполненные задачи
+@dp.message(F.text == "🏁 Выполненные")
+async def show_done(message: Message):
+    tasks = await database.get_completed_tasks(message.from_user.id)
+    if not tasks:
+        await message.answer("Пока ничего не выполнено. Но это только начало 💪")
+        return
 
-@dp.callback_query(F.data == "new_project")
-async def new_project_prompt(callback: CallbackQuery):
-    await callback.message.answer("Напиши название нового проекта (только текстом):")
-    await callback.answer()
+    text = "<b>Вот, что ты уже сделала:</b>\n\n"
+    for title, ts in tasks[:10]:
+        date_str = datetime.fromisoformat(ts).strftime("%d.%m %H:%M")
+        text += f"✅ {title} ({date_str})\n"
 
-@dp.message(F.text.regexp(r"^проект: .+"))
-async def create_project_from_text(message: Message):
-    title = message.text.replace("проект: ", "").strip()
-    await database.create_project(message.from_user.id, title)
-    await message.answer(f"Проект «{title}» создан! Чтобы добавить задачи — используй #название_проекта при создании задач.")
+    await message.answer(text)
 
 
-# Добавить проект
-@dp.message(F.text.startswith("+проект "))
-async def handle_add_project(message: Message):
-    title = message.text[8:].strip()
-    await database.create_project(message.from_user.id, title)
-    await message.answer(f"📁 Проект «{title}» создан! Теперь добавь задачи к нему.")
 
-# Завершить проект
-@dp.message(F.text.startswith("завершить проект "))
+ @dp.message(F.text.startswith("завершить проект "))
 async def handle_complete_project(message: Message):
     title = message.text.replace("завершить проект ", "").strip()
     project_id = await database.get_project_id(message.from_user.id, title)
@@ -131,37 +119,14 @@ async def handle_complete_project(message: Message):
     else:
         await message.answer("⚠️ Проект не найден.")
 
-# Показать задачи
-@dp.message(F.text == "📋 Мои задачи")
-async def show_today_tasks(message: Message):
-    tasks = await database.get_tasks_for_user_today(message.from_user.id)
-    if not tasks:
-        await message.answer("Сегодня всё свободно. Можно отдохнуть или сделать что-то по душе 🌼")
-        return
-    text = "<b>Твои задачи на сегодня:</b>\n\n"
-    for title, task_time in tasks:
-        text += f"🕒 <b>{task_time}</b> — {title}\n"
-    await message.answer(text)
 
-# Показать выполненные
-@dp.message(F.text == "🏁 Выполненные")
-async def show_done(message: Message):
-    tasks = await database.get_completed_tasks(message.from_user.id)
-    if not tasks:
-        await message.answer("Пока ничего не выполнено. Но это только начало 💪")
-        return
-    text = "<b>Вот, что ты уже сделала:</b>\n\n"
-    for title, ts in tasks[:10]:
-        date_str = datetime.fromisoformat(ts).strftime("%d.%m %H:%M")
-        text += f"✅ {title} ({date_str})\n"
-    await message.answer(text)
-
-# Прогресс
+# 📈 Прогресс (заглушка)
 @dp.message(F.text == "📈 Прогресс")
 async def show_progress(message: Message):
     stats = await database.get_user_stats(message.from_user.id)
     total = stats["done"] + stats["missed"]
     percent = int((stats["done"] / total) * 100) if total else 0
+
     await message.answer(f"""
 <b>Твоя дисциплина 🌱</b>
 
@@ -175,14 +140,23 @@ async def show_progress(message: Message):
 Ты умничка! Продолжай в том же духе!
 """)
 
-# Обработка кнопок
+@dp.message(F.text.startswith("+проект "))
+async def handle_add_project(message: Message):
+    title = message.text[8:].strip()
+    await database.create_project(message.from_user.id, title)
+    await message.answer(f"📁 Проект «{title}» создан! Теперь добавь задачи к нему.")
+
+
+# ✅ Обработка: выполнено
 @dp.callback_query(F.data.startswith("done:"))
 async def handle_done(callback: CallbackQuery):
+    print("✅ Хендлер нажатия 'Сделано' сработал")
     task_id = int(callback.data.split(":")[1])
     await database.mark_task_done(task_id)
     await callback.message.answer("Молодец! Задача отмечена как выполненная 💚")
     await callback.answer()
 
+# ❌ Обработка: пропущено
 @dp.callback_query(F.data.startswith("missed:"))
 async def handle_missed(callback: CallbackQuery):
     task_id = int(callback.data.split(":")[1])
@@ -190,6 +164,7 @@ async def handle_missed(callback: CallbackQuery):
     await callback.message.answer("Окей, двигаемся дальше. Главное — не останавливаться ☁️")
     await callback.answer()
 
+# 🔁 Отложить задачу
 @dp.callback_query(F.data.startswith("later:"))
 async def handle_later(callback: CallbackQuery):
     task_id = int(callback.data.split(":")[1])
@@ -206,7 +181,7 @@ async def apply_postpone(callback: CallbackQuery):
     await callback.message.answer(f"Окей, напомню позже в {new_time} ⏰")
     await callback.answer()
 
-# Напоминания
+# 🔔 Напоминания
 async def send_reminders():
     tasks = await database.get_tasks_for_now()
     for user_id, task_id, title in tasks:
@@ -216,27 +191,27 @@ async def send_reminders():
             reply_markup=get_task_buttons(task_id)
         )
 
-# Миграция
+
 async def migrate_add_columns():
     async with aiosqlite.connect("tasks.db") as db:
         try:
             await db.execute("ALTER TABLE tasks ADD COLUMN completed INTEGER DEFAULT 0")
-        except: print("⚠️ 'completed' уже есть")
+        except:
+            print("⚠️ Колонка 'completed' уже есть")
         try:
             await db.execute("ALTER TABLE tasks ADD COLUMN completed_at TEXT")
-        except: print("⚠️ 'completed_at' уже есть")
+        except:
+            print("⚠️ Колонка 'completed_at' уже есть")
         try:
             await db.execute("ALTER TABLE tasks ADD COLUMN missed INTEGER DEFAULT 0")
-        except: print("⚠️ 'missed' уже есть")
-        try:
-            await db.execute("ALTER TABLE tasks ADD COLUMN project_id INTEGER")
-        except: print("⚠️ 'project_id' уже есть")
+        except:
+            print("⚠️ Колонка 'missed' уже есть")
         await db.commit()
 
 # Запуск
 async def main():
     await database.init()
-    # await migrate_add_columns()
+    #await migrate_add_columns()  
     scheduler.add_job(send_reminders, "interval", minutes=1)
     scheduler.start()
     print("✨ Бот запущен!")
