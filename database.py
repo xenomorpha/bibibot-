@@ -241,4 +241,24 @@ async def get_user_projects_with_progress(user_id: int):
         """, (user_id,))
         return await cursor.fetchall()
 
+# 🗑 Удалить проект (и задачи)
+async def delete_project(project_id: int):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute("DELETE FROM tasks WHERE project_id = ?", (project_id,))
+        await db.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+        await db.commit()
+
+# ✅ Выполненные задачи за неделю
+async def get_completed_tasks_last_week(user_id: int):
+    one_week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute("""
+            SELECT tasks.title, task_logs.timestamp
+            FROM task_logs
+            JOIN tasks ON task_logs.task_id = tasks.id
+            WHERE task_logs.user_id = ? AND task_logs.action = 'done'
+            AND DATE(task_logs.timestamp) >= ?
+            ORDER BY task_logs.timestamp DESC
+        """, (user_id, one_week_ago))
+        return await cursor.fetchall()
 
