@@ -14,7 +14,7 @@ import aiosqlite
 main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="🌟 Добавить задачу")],
     [KeyboardButton(text="🗌 Мои задачи"), KeyboardButton(text="🏁 Выполненные")],
-    [KeyboardButton(text="📊 Прогресс"), KeyboardButton(text="📁 Проекты")],
+    [KeyboardButton(text="📈 Прогресс"), KeyboardButton(text="📁 Проекты")],
     [KeyboardButton(text="🏁 За неделю")]
 ], resize_keyboard=True)
 
