@@ -279,9 +279,11 @@ async def send_reminders():
     for user_id, task_id, title in tasks:
         await bot.send_message(user_id, f"🌸 Напоминание: {title}", reply_markup=get_task_buttons(task_id))
 
-# 👉 notify abt upd
 async def notify_all_users():
     users = await database.get_all_user_ids()
+
+    print(f"🙋 Найдено пользователей: {len(users)}")  # ← вот это "перед циклом"
+
     for user_id in users:
         try:
             await bot.send_message(
@@ -290,6 +292,7 @@ async def notify_all_users():
             )
         except Exception as e:
             print(f"❌ Не удалось отправить сообщение {user_id}: {e}")
+
 
 # 🚀 основной запуск
 async def main():
