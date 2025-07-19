@@ -13,9 +13,9 @@ import aiosqlite
 # Главное меню
 main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="🌟 Добавить задачу")],
-    [KeyboardButton(text="🗌 Мои задачи"), KeyboardButton(text="🏁 Выполненные")],
+    [KeyboardButton(text="📋 Мои задачи"), KeyboardButton(text="🏁 Выполненные")],
     [KeyboardButton(text="📈 Прогресс"), KeyboardButton(text="📁 Проекты")],
-    [KeyboardButton(text="🏁 За неделю")]
+    [KeyboardButton(text="🎯 За неделю")]
 ], resize_keyboard=True)
 
 API_TOKEN = os.getenv("API_TOKEN")
@@ -95,7 +95,7 @@ async def show_done(message: Message):
         text += f"✅ {title} ({date_str})\n"
     await message.answer(text)
 
-@dp.message(F.text == "🚀 За неделю")
+@dp.message(F.text == "🎯 За неделю")
 async def show_done_week(message: Message):
     tasks = await database.get_completed_tasks_last_week(message.from_user.id)
     if not tasks:
