@@ -299,11 +299,19 @@ async def notify_all_users():
 # 🚀 основной запуск
 async def main():
     await database.init()
-    await notify_all_users()  
+
     scheduler.add_job(send_reminders, "interval", minutes=1)
     scheduler.start()
+
+    # Отложить уведомление на 30 секунд
+    asyncio.create_task(delayed_notify())
+
     print("✨ Бот запущен!")
     await dp.start_polling(bot)
+
+async def delayed_notify():
+    await asyncio.sleep(30)
+    await notify_all_users()
 
 if __name__ == "__main__":
     asyncio.run(main())
