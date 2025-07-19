@@ -282,7 +282,7 @@ async def send_reminders():
 async def notify_all_users():
     users = await database.get_all_user_ids()
 
-    print(f"🙋 Найдено пользователей: {len(users)}")  # ← вот это "перед циклом"
+    print(f"🙋 Найдено пользователей: {len(users)}")  
 
     for user_id in users:
         try:
@@ -297,7 +297,7 @@ async def notify_all_users():
 # 🚀 основной запуск
 async def main():
     await database.init()
-    await notify_all_users()  # Вызов рассылки один раз
+    await notify_all_users()  
     scheduler.add_job(send_reminders, "interval", minutes=1)
     scheduler.start()
     print("✨ Бот запущен!")
