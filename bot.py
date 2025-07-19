@@ -11,7 +11,7 @@ import database
 import aiosqlite
 
 API_TOKEN = os.getenv("7828773245:AAHa5Qlzbn6FeByak40UA6liCpLzwSMlqOk")
-bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(token=7828773245:AAHa5Qlzbn6FeByak40UA6liCpLzwSMlqOk, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
 # Главное меню
