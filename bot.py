@@ -33,6 +33,7 @@ def get_task_buttons(task_id):
 
 @dp.message(F.text == "/start")
 async def start_handler(message: Message):
+    print(f"🔍 User ID: {message.from_user.id}")  # 👈 Добавь эту строку
     await database.create_user(message.from_user.id)
     await message.answer("Привет, я Биби 🌱 Я помогу тебе организовать свои дела и выполнять их во время. Какие у тебя есть задачи?", reply_markup=main_menu)
 
