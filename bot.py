@@ -174,6 +174,9 @@ async def list_projects(message: Message):
             "<code>Сделать презентацию / 10:00 / 18.07 / #работа</code>\n\n"
             "✅ Чтобы завершить проект, напиши:\n"
             "<code>завершить проект Название</code>"
+            "🗑 Чтобы удалить проект напиши:\n"
+            "<code>удалить проект Название</code>"
+
         )
         return
 
@@ -278,6 +281,17 @@ async def send_reminders():
 
 async def main():
     await database.init()
+    async def notify_all_users():
+    users = await database.get_all_user_ids()
+    for user_id in users:
+        try:
+            await bot.send_message(
+                user_id,
+                "✨ Бот обновился! Теперь он работает 24/7 на сервере! Чтобы пользоваться новой версией и всегда быть на связи — нажмите /start"
+            )
+        except Exception as e:
+            print(f"❌ Не удалось отправить сообщение {user_id}: {e}")
+
     scheduler.add_job(send_reminders, "interval", minutes=1)
     scheduler.start()
     print("✨ Бот запущен!")
