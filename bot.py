@@ -279,9 +279,8 @@ async def send_reminders():
     for user_id, task_id, title in tasks:
         await bot.send_message(user_id, f"🌸 Напоминание: {title}", reply_markup=get_task_buttons(task_id))
 
-async def main():
-    await database.init()
-    async def notify_all_users():
+# 👉 notify abt upd
+async def notify_all_users():
     users = await database.get_all_user_ids()
     for user_id in users:
         try:
@@ -292,6 +291,10 @@ async def main():
         except Exception as e:
             print(f"❌ Не удалось отправить сообщение {user_id}: {e}")
 
+# 🚀 основной запуск
+async def main():
+    await database.init()
+    await notify_all_users()  # Вызов рассылки один раз
     scheduler.add_job(send_reminders, "interval", minutes=1)
     scheduler.start()
     print("✨ Бот запущен!")
