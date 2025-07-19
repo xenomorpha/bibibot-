@@ -262,3 +262,8 @@ async def get_completed_tasks_last_week(user_id: int):
         """, (user_id, one_week_ago))
         return await cursor.fetchall()
 
+async def get_all_user_ids():
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute("SELECT user_id FROM users")
+        rows = await cursor.fetchall()
+        return [row[0] for row in rows]
