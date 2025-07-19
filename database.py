@@ -1,11 +1,13 @@
 import aiosqlite
 from datetime import datetime, date, timedelta
+import os  # 👈 импорт добавлен
 
 DB_NAME = "tasks.db"
 
 # ✅ Инициализация базы данных
 async def init():
     async with aiosqlite.connect(DB_NAME) as db:
+        print(f"📁 Путь до базы данных: {os.path.abspath(DB_NAME)}")  # 👈 путь до файла
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY
