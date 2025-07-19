@@ -10,7 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import database
 import aiosqlite
 
-API_TOKEN = os.getenv("API_TOKEN")
+API_TOKEN = os.getenv("7828773245:AAHa5Qlzbn6FeByak40UA6liCpLzwSMlqOk")
 bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
