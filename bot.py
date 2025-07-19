@@ -16,7 +16,9 @@ main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="📈 Прогресс"), KeyboardButton(text="📁 Проекты")]
 ], resize_keyboard=True)
 
-API_TOKEN = '7828773245:AAHa5Qlzbn6FeByak40UA6liCpLzwSMlqOk'
+import os
+API_TOKEN = os.getenv("7828773245:AAHa5Qlzbn6FeByak40UA6liCpLzwSMlqOk")
+
 
 # 🎯 Кнопки под задачами
 def get_task_buttons(task_id):
