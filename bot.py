@@ -36,7 +36,8 @@ async def start_handler(message: Message):
     await database.create_user(message.from_user.id)
     await message.answer("Привет, я Биби 🌱 Я помогу тебе организовать свои дела и выполнять их во время. Какие у тебя есть задачи?", reply_markup=main_menu)
 
-@dp.message(F.text.regexp(r"^.+ / \\d{2}:\\d{2}( / \\d{2}\\.\\d{2})?( / #.+)?$"))
+@dp.message(F.text.regexp(r"^.+ / \d{2}:\d{2}( / \d{2}\.\d{2})?( / #.+)?$"
+))
 async def save_task(message: Message):
     try:
         parts = [p.strip() for p in message.text.split("/") if p.strip()]
