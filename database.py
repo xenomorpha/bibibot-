@@ -47,6 +47,8 @@ async def create_user(user_id: int):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
         await db.commit()
+        print(f"✅ Пользователь добавлен в БД: {user_id}")
+
 
 # ✅ Добавление задачи
 async def add_task(user_id: int, title: str, time: object, task_date: date, project_id: int = None):
