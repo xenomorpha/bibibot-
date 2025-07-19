@@ -87,7 +87,7 @@ async def get_tasks_for_user_today(user_id: int):
         return await cursor.fetchall()
 
 # ✅ Выполненные задачи
-async def get_completed_tasks(user_id: int):
+tasks = await database.get_completed_tasks(message.from_user.id)
     async with aiosqlite.connect(DB_NAME) as db:
         cursor = await db.execute("""
             SELECT tasks.title, task_logs.timestamp
