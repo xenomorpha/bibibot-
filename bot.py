@@ -19,6 +19,8 @@ main_menu = ReplyKeyboardMarkup(keyboard=[
 import os
 API_TOKEN = os.getenv("7828773245:AAHa5Qlzbn6FeByak40UA6liCpLzwSMlqOk")
 
+dp = Dispatcher()
+
 
 # 🎯 Кнопки под задачами
 def get_task_buttons(task_id):
