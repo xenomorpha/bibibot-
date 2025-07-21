@@ -36,32 +36,44 @@ async def start_handler(message: Message):
     await database.create_user(message.from_user.id)
     await message.answer("Привет, я Биби 🌱 Я помогу тебе организовать свои дела и выполнять их во время. Какие у тебя есть задачи?", reply_markup=main_menu)
 
-@dp.message(F.text.regexp(r"^.+ / \d{2}:\d{2}( / \d{2}\.\d{2})?( / #.+)?$"
-))
+@dp.message(F.text.regexp(r"^.+ / \d{2}:\d{2}( / \d{2}\.\d{2})?( / #.+)?$"))
 async def save_task(message: Message):
     try:
         parts = [p.strip() for p in message.text.split("/") if p.strip()]
         title = parts[0]
         time_str = parts[1]
+
+        # Парсим время
         task_time = datetime.strptime(time_str, "%H:%M").time()
+        
+        # Дата по умолчанию — сегодня
         task_date = datetime.now().date()
         project_id = None
+        project_name = None
 
         for p in parts[2:]:
             if p.startswith("#"):
                 project_name = p.replace("#", "").strip()
                 project_id = await database.get_project_id(message.from_user.id, project_name)
             elif "." in p:
+                # Гарантированно оставляем task_date объектом типа date
                 task_date = datetime.strptime(p, "%d.%m").replace(year=datetime.now().year).date()
 
+        # Лог для отладки
+        print("💾 Сохраняем задачу:", title, task_time, task_date, type(task_date))
+
         await database.add_task(message.from_user.id, title, task_time, task_date, project_id)
+
+        # Ответ пользователю
         msg = f"📝 Задача «{title}» добавлена на {task_date.strftime('%d.%m')} в {task_time.strftime('%H:%M')}"
         if project_id:
             msg += f" в проект «{project_name}»"
         await message.answer(msg)
+
     except Exception as e:
-        print("Ошибка сохранения:", e)
-        await message.answer("Формат: Название / HH:MM / ДД.ММ / #проект (опционально)")
+        print("❌ Ошибка сохранения:", e)
+        await message.answer("⚠️ Ошибка. Формат: Название / HH:MM / ДД.ММ / #проект (опционально)")
+
 
 @dp.message(F.text.startswith("🌟 Добавить задачу"))
 async def add_task_help(message: Message):
@@ -174,7 +186,7 @@ async def list_projects(message: Message):
             "📝 Чтобы добавить задачу в проект, просто укажи его хэштег:\n"
             "<code>Сделать презентацию / 10:00 / 18.07 / #работа</code>\n\n"
             "✅ Чтобы завершить проект, напиши:\n"
-            "<code>завершить проект Название</code>"
+            "<code>завершить проект Название</code>\n\n"
             "🗑 Чтобы удалить проект напиши:\n"
             "<code>удалить проект Название</code>"
 
