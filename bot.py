@@ -8,7 +8,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import database
-import aiosqlite
 
 # Главное меню
 main_menu = ReplyKeyboardMarkup(keyboard=[
