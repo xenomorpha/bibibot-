@@ -2,8 +2,10 @@ import asyncpg
 from datetime import datetime, date, timedelta
 import os
 
+# Глобальный пул подключений
 _pool = None
 
+# Получаем URL подключения из переменной окружения
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("❌ DATABASE_URL не установлен!")
@@ -11,10 +13,8 @@ if not DATABASE_URL:
 async def connect():
     global _pool
     if _pool is None:
-        ssl_context = ssl.create_default_context()
         _pool = await asyncpg.create_pool(DATABASE_URL)
     return _pool
-
 
 async def init():
     pool = await connect()
@@ -48,12 +48,10 @@ async def init():
             );
         """)
 
-
 async def create_user(user_id: int):
     pool = await connect()
     async with pool.acquire() as conn:
         await conn.execute("INSERT INTO users (user_id) VALUES ($1) ON CONFLICT DO NOTHING", user_id)
-
 
 async def add_task(user_id: int, title: str, time: object, task_date: date, project_id: int = None):
     pool = await connect()
@@ -62,7 +60,6 @@ async def add_task(user_id: int, title: str, time: object, task_date: date, proj
             INSERT INTO tasks (user_id, title, time, date, project_id)
             VALUES ($1, $2, $3, $4, $5)
         """, user_id, title, time.strftime("%H:%M"), task_date.strftime("%Y-%m-%d"), project_id)
-
 
 async def get_tasks_for_now():
     now = datetime.now()
@@ -75,7 +72,6 @@ async def get_tasks_for_now():
             WHERE time = $1 AND date = $2 AND completed = 0 AND missed = 0
         """, current_time, current_date)
 
-
 async def get_tasks_for_user_today(user_id: int):
     today = date.today().strftime("%Y-%m-%d")
     pool = await connect()
@@ -85,7 +81,6 @@ async def get_tasks_for_user_today(user_id: int):
             WHERE user_id = $1 AND date = $2 AND completed = 0 AND missed = 0
             ORDER BY time ASC
         """, user_id, today)
-
 
 async def get_completed_tasks(user_id: int):
     pool = await connect()
@@ -97,7 +92,6 @@ async def get_completed_tasks(user_id: int):
             WHERE task_logs.user_id = $1 AND task_logs.action = 'done'
             ORDER BY task_logs.timestamp DESC
         """, user_id)
-
 
 async def mark_task_done(task_id: int):
     pool = await connect()
@@ -113,7 +107,6 @@ async def mark_task_done(task_id: int):
                 VALUES ($1, $2, 'done', CURRENT_TIMESTAMP)
             """, user_id, task_id)
 
-
 async def mark_task_missed(task_id: int):
     pool = await connect()
     async with pool.acquire() as conn:
@@ -126,14 +119,12 @@ async def mark_task_missed(task_id: int):
                 VALUES ($1, $2, 'missed', CURRENT_TIMESTAMP)
             """, user_id, task_id)
 
-
 async def postpone_task(task_id: int, minutes: int):
     new_time = (datetime.now() + timedelta(minutes=minutes)).strftime("%H:%M")
     pool = await connect()
     async with pool.acquire() as conn:
         await conn.execute("UPDATE tasks SET time = $1 WHERE id = $2", new_time, task_id)
     return new_time
-
 
 async def log_task_action(user_id: int, task_id: int, action: str):
     timestamp = datetime.now().isoformat()
@@ -144,18 +135,15 @@ async def log_task_action(user_id: int, task_id: int, action: str):
             VALUES ($1, $2, $3, $4)
         """, user_id, task_id, action, timestamp)
 
-
 async def get_user_stats(user_id: int):
     pool = await connect()
     async with pool.acquire() as conn:
         done = await conn.fetchval("""
             SELECT COUNT(*) FROM task_logs WHERE user_id = $1 AND action = 'done'
         """, user_id)
-
         missed = await conn.fetchval("""
             SELECT COUNT(*) FROM task_logs WHERE user_id = $1 AND action = 'missed'
         """, user_id)
-
         rows = await conn.fetch("""
             SELECT DISTINCT DATE(timestamp)
             FROM task_logs
@@ -179,19 +167,16 @@ async def get_user_stats(user_id: int):
         "streak": streak
     }
 
-
 async def create_project(user_id: int, title: str):
     pool = await connect()
     async with pool.acquire() as conn:
         await conn.execute("INSERT INTO projects (user_id, title) VALUES ($1, $2)", user_id, title)
-
 
 async def get_project_id(user_id: int, title: str):
     pool = await connect()
     async with pool.acquire() as conn:
         row = await conn.fetchrow("SELECT id FROM projects WHERE user_id = $1 AND title = $2", user_id, title)
         return row['id'] if row else None
-
 
 async def complete_project(project_id: int):
     pool = await connect()
@@ -201,12 +186,10 @@ async def complete_project(project_id: int):
             WHERE project_id = $1
         """, project_id)
 
-
 async def get_user_projects(user_id: int):
     pool = await connect()
     async with pool.acquire() as conn:
         return await conn.fetch("SELECT id, title FROM projects WHERE user_id = $1", user_id)
-
 
 async def get_tasks_for_project(project_id: int):
     pool = await connect()
@@ -217,7 +200,6 @@ async def get_tasks_for_project(project_id: int):
             WHERE project_id = $1
             ORDER BY date, time
         """, project_id)
-
 
 async def get_user_projects_with_progress(user_id: int):
     pool = await connect()
@@ -232,13 +214,11 @@ async def get_user_projects_with_progress(user_id: int):
             GROUP BY p.id
         """, user_id)
 
-
 async def delete_project(project_id: int):
     pool = await connect()
     async with pool.acquire() as conn:
         await conn.execute("DELETE FROM tasks WHERE project_id = $1", project_id)
         await conn.execute("DELETE FROM projects WHERE id = $1", project_id)
-
 
 async def get_completed_tasks_last_week(user_id: int):
     one_week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
@@ -253,11 +233,11 @@ async def get_completed_tasks_last_week(user_id: int):
             ORDER BY task_logs.timestamp DESC
         """, user_id, one_week_ago)
 
-
 async def get_all_user_ids():
     pool = await connect()
     async with pool.acquire() as conn:
         rows = await conn.fetch("SELECT user_id FROM users")
         return [row['user_id'] for row in rows]
+
 
 
