@@ -57,15 +57,15 @@ async def add_task(user_id: int, title: str, time: object, task_date: date, proj
     pool = await connect()
     async with pool.acquire() as conn:
         await conn.execute("""
-    INSERT INTO tasks (user_id, title, time, date, project_id)
-    VALUES ($1, $2, $3, $4, $5)
-""", user_id, title, time.strftime("%H:%M"), task_date, project_id)
+            INSERT INTO tasks (user_id, title, time, date, project_id)
+            VALUES ($1, $2, $3, $4, $5)
+        """, user_id, title, time.strftime("%H:%M"), task_date, project_id)
 
 
 async def get_tasks_for_now():
     now = datetime.now()
     current_time = now.strftime("%H:%M")
-    current_date = now.strftime("%Y-%m-%d")
+    current_date = now.date()  # ✅ как date
     pool = await connect()
     async with pool.acquire() as conn:
         return await conn.fetch("""
@@ -73,8 +73,9 @@ async def get_tasks_for_now():
             WHERE time = $1 AND date = $2 AND completed = 0 AND missed = 0
         """, current_time, current_date)
 
+
 async def get_tasks_for_user_today(user_id: int):
-    today = date.today().strftime("%Y-%m-%d")
+    today = date.today()  # ✅ не str
     pool = await connect()
     async with pool.acquire() as conn:
         return await conn.fetch("""
@@ -82,6 +83,7 @@ async def get_tasks_for_user_today(user_id: int):
             WHERE user_id = $1 AND date = $2 AND completed = 0 AND missed = 0
             ORDER BY time ASC
         """, user_id, today)
+
 
 async def get_completed_tasks(user_id: int):
     pool = await connect()
