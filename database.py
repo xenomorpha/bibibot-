@@ -12,7 +12,7 @@ async def connect():
     global _pool
     if _pool is None:
         ssl_context = ssl.create_default_context()
-        _pool = await asyncpg.create_pool(DATABASE_URL, ssl=ssl_context)
+        _pool = await asyncpg.create_pool(DATABASE_URL)
     return _pool
 
 
