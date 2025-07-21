@@ -9,7 +9,6 @@ from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import database
 
-# Главное меню
 main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="🌟 Добавить задачу")],
     [KeyboardButton(text="📋 Мои задачи"), KeyboardButton(text="🏁 Выполненные")],
@@ -22,7 +21,6 @@ bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTM
 dp = Dispatcher()
 scheduler = AsyncIOScheduler()
 
-# Кнопки под задачами
 def get_task_buttons(task_id):
     builder = InlineKeyboardBuilder()
     builder.button(text="✅ Сделано", callback_data=f"done:{task_id}")
@@ -32,7 +30,6 @@ def get_task_buttons(task_id):
 
 @dp.message(F.text == "/start")
 async def start_handler(message: Message):
-    print(f"🔍 User ID: {message.from_user.id}")  # 👈 Добавь эту строку
     await database.create_user(message.from_user.id)
     await message.answer("Привет, я Биби 🌱 Я помогу тебе организовать свои дела и выполнять их во время. Какие у тебя есть задачи?", reply_markup=main_menu)
 
@@ -42,38 +39,25 @@ async def save_task(message: Message):
         parts = [p.strip() for p in message.text.split("/") if p.strip()]
         title = parts[0]
         time_str = parts[1]
-
-        # Парсим время
         task_time = datetime.strptime(time_str, "%H:%M").time()
-        
-        # Дата по умолчанию — сегодня
         task_date = datetime.now().date()
         project_id = None
-        project_name = None
 
         for p in parts[2:]:
             if p.startswith("#"):
                 project_name = p.replace("#", "").strip()
                 project_id = await database.get_project_id(message.from_user.id, project_name)
             elif "." in p:
-                # Гарантированно оставляем task_date объектом типа date
                 task_date = datetime.strptime(p, "%d.%m").replace(year=datetime.now().year).date()
 
-        # Лог для отладки
-        print("💾 Сохраняем задачу:", title, task_time, task_date, type(task_date))
-
         await database.add_task(message.from_user.id, title, task_time, task_date, project_id)
-
-        # Ответ пользователю
         msg = f"📝 Задача «{title}» добавлена на {task_date.strftime('%d.%m')} в {task_time.strftime('%H:%M')}"
         if project_id:
             msg += f" в проект «{project_name}»"
         await message.answer(msg)
-
     except Exception as e:
-        print("❌ Ошибка сохранения:", e)
-        await message.answer("⚠️ Ошибка. Формат: Название / HH:MM / ДД.ММ / #проект (опционально)")
-
+        print("Ошибка сохранения:", e)
+        await message.answer("Формат: Название / HH:MM / ДД.ММ / #проект (опционально)")
 
 @dp.message(F.text.startswith("🌟 Добавить задачу"))
 async def add_task_help(message: Message):
@@ -93,7 +77,7 @@ async def show_today_tasks(message: Message):
         return
     text = "<b>Твои задачи на сегодня:</b>\n\n"
     for title, task_time in tasks:
-        text += f"🕒 <b>{task_time}</b> — {title}\n"
+        text += f"🕒 <b>{task_time.strftime('%H:%M')}</b> — {title}\n"
     await message.answer(text)
 
 @dp.message(F.text == "🏁 Выполненные")
