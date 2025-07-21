@@ -1,12 +1,15 @@
 import asyncpg
 from datetime import datetime, date, timedelta
 import os
+import ssl
+
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-
 async def connect():
-    return await asyncpg.connect(DATABASE_URL)
+    ssl_context = ssl.create_default_context()
+    return await asyncpg.connect(DATABASE_URL, ssl=ssl_context)
+
 
 
 async def init():
