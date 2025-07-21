@@ -57,9 +57,10 @@ async def add_task(user_id: int, title: str, time: object, task_date: date, proj
     pool = await connect()
     async with pool.acquire() as conn:
         await conn.execute("""
-            INSERT INTO tasks (user_id, title, time, date, project_id)
-            VALUES ($1, $2, $3, $4, $5)
-        """, user_id, title, time.strftime("%H:%M"), task_date.strftime("%Y-%m-%d"), project_id)
+    INSERT INTO tasks (user_id, title, time, date, project_id)
+    VALUES ($1, $2, $3, $4, $5)
+""", user_id, title, time.strftime("%H:%M"), task_date, project_id)
+
 
 async def get_tasks_for_now():
     now = datetime.now()
