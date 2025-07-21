@@ -1,7 +1,7 @@
 import asyncpg
 from datetime import datetime, date, timedelta
 import os
-import ssl
+
 _pool = None
 
 DATABASE_URL = os.getenv("DATABASE_URL")
