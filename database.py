@@ -4,7 +4,8 @@ import os
 import ssl
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-_pool = None
+if not DATABASE_URL:
+    raise RuntimeError("❌ DATABASE_URL не установлен!")
 
 async def connect():
     global _pool
