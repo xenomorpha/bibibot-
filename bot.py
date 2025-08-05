@@ -47,7 +47,15 @@ async def add_task_help(message: Message):
 async def save_task(message: Message):
     try:
         parts = [p.strip() for p in message.text.split("/") if p.strip()]
+        print("parts:", parts)  # 🔍 Для отладки
+
+        if len(parts) < 2:
+            raise ValueError("Недостаточно параметров")
+
         title = parts[0]
+        if not title:
+            raise ValueError("Пустое название")
+
         time_str = parts[1]
         task_time = datetime.strptime(time_str, "%H:%M").time()
         task_date = datetime.now().date()
@@ -58,16 +66,18 @@ async def save_task(message: Message):
                 project_name = p.replace("#", "").strip()
                 project_id = await database.get_project_id(message.from_user.id, project_name)
             elif "." in p:
-                task_date = datetime.strptime(p.strip(), "%d.%m").date().replace(year=datetime.now().year)
+                task_date = datetime.strptime(p.strip(), "%d.%m").replace(year=datetime.now().year).date()
 
-        await database.add_task(message.from_user.id, title, task_time.strftime("%H:%M"), task_date.isoformat(), project_id)
+        await database.add_task(message.from_user.id, title, task_time, task_date, project_id)
         msg = f"📝 Задача «{title}» добавлена на {task_date.strftime('%d.%m')} в {task_time.strftime('%H:%M')}"
         if project_id:
             msg += f" в проект «{project_name}»"
         await message.answer(msg)
+
     except Exception as e:
         print("Ошибка сохранения:", e)
         await message.answer("Формат: Название / HH:MM / ДД.ММ / #проект (опционально)")
+
 
 @dp.message(F.text == "📋 Мои задачи")
 async def show_today_tasks(message: Message):
