@@ -64,15 +64,15 @@ async def add_task(user_id: int, title: str, time: object, task_date: date, proj
 
 async def get_tasks_for_now():
     now = datetime.now()
-    current_time = now.time().replace(second=0, microsecond=0)
-    current_date = now.date()
+    current_time = now.strftime("%H:%M")  # 🔧 Преобразуем во ВРЕМЯ в строковом виде
+    current_date = now.strftime("%Y-%m-%d")  # 🔧 Преобразуем дату в строку
     pool = await connect()
     async with pool.acquire() as conn:
         return await conn.fetch("""
-    SELECT user_id, id, title FROM tasks
-    WHERE time = $1 AND date = $2 AND completed = 0 AND missed = 0
-""", current_time, current_date)
-
+            SELECT user_id, id, title FROM tasks
+            WHERE to_char(time, 'HH24:MI') = $1 AND to_char(date, 'YYYY-MM-DD') = $2
+                  AND completed = 0 AND missed = 0
+        """, current_time, current_date)
 
 
 async def get_tasks_for_user_today(user_id: int):
