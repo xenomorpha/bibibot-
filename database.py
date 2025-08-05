@@ -229,5 +229,15 @@ async def get_all_user_ids():
         rows = await conn.fetch("SELECT user_id FROM users")
         return [row['user_id'] for row in rows]
 
+async def get_completed_tasks(user_id: int):
+    pool = await connect()
+    async with pool.acquire() as conn:
+        return await conn.fetch("""
+            SELECT tasks.title, task_logs.timestamp
+            FROM task_logs
+            JOIN tasks ON task_logs.task_id = tasks.id
+            WHERE task_logs.user_id = $1 AND task_logs.action = 'done'
+            ORDER BY task_logs.timestamp DESC
+        """, user_id)
 
 
