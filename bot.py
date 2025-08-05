@@ -12,7 +12,7 @@ import database
 main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="🌟 Добавить задачу")],
     [KeyboardButton(text="📋 Мои задачи"), KeyboardButton(text="🏁 Выполненные")],
-    [KeyboardButton(text="📈 Прогресс"), KeyboardButton(text="📁 Проекты")],
+    [KeyboardButton(text="📊 Прогресс"), KeyboardButton(text="📁 Проекты")],
     [KeyboardButton(text="🎯 За неделю")]
 ], resize_keyboard=True)
 
@@ -59,16 +59,6 @@ async def save_task(message: Message):
         print("Ошибка сохранения:", e)
         await message.answer("Формат: Название / HH:MM / ДД.ММ / #проект (опционально)")
 
-@dp.message(F.text.startswith("🌟 Добавить задачу"))
-async def add_task_help(message: Message):
-    await message.answer(
-        "📝 Чтобы добавить задачу, напиши её вот так:\n\n"
-        "<code>Прочитать книгу / 18:00</code>\n"
-        "<code>Сьесть лягушку / 19:30 / 17.07</code>\n"
-        "<code>Сходить в бассейн / 14:00 / 20.07 / #работа</code>\n\n"
-        "⏰ Формат: <b>Название / Время / Дата / #проект</b> (дата и проект — по желанию)"
-    )
-
 @dp.message(F.text == "📋 Мои задачи")
 async def show_today_tasks(message: Message):
     tasks = await database.get_tasks_for_user_today(message.from_user.id)
@@ -77,6 +67,8 @@ async def show_today_tasks(message: Message):
         return
     text = "<b>Твои задачи на сегодня:</b>\n\n"
     for title, task_time in tasks:
+        if isinstance(task_time, str):
+            task_time = datetime.strptime(task_time, "%H:%M").time()
         text += f"🕒 <b>{task_time.strftime('%H:%M')}</b> — {title}\n"
     await message.answer(text)
 
