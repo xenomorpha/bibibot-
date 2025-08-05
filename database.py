@@ -210,7 +210,7 @@ async def delete_project(project_id: int):
         await conn.execute("DELETE FROM projects WHERE id = $1", project_id)
 
 async def get_completed_tasks_last_week(user_id: int):
-    one_week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    one_week_ago = (datetime.now() - timedelta(days=7)).date()
     pool = await connect()
     async with pool.acquire() as conn:
         return await conn.fetch("""
