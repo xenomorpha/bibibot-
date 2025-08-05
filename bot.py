@@ -33,6 +33,16 @@ async def start_handler(message: Message):
     await database.create_user(message.from_user.id)
     await message.answer("Привет, я Биби 🌱 Я помогу тебе организовать свои дела и выполнять их во время. Какие у тебя есть задачи?", reply_markup=main_menu)
 
+@dp.message(F.text.startswith("🌟 Добавить задачу"))
+async def add_task_help(message: Message):
+    await message.answer(
+        "📝 Чтобы добавить задачу, напиши её вот так:\n\n"
+        "<code>Прочитать книгу / 18:00</code>\n"
+        "<code>Написать письмо / 19:30 / 17.07</code>\n"
+        "<code>Сходить в бассейн / 14:00 / 20.07 / #работа</code>\n\n"
+        "⏰ Формат: <b>Название / Время / Дата / #проект</b> (дата и проект — по желанию)"
+    )
+
 @dp.message(F.text.regexp(r"^.+ / \d{2}:\d{2}( / \d{2}\.\d{2})?( / #.+)?$"))
 async def save_task(message: Message):
     try:
@@ -48,9 +58,9 @@ async def save_task(message: Message):
                 project_name = p.replace("#", "").strip()
                 project_id = await database.get_project_id(message.from_user.id, project_name)
             elif "." in p:
-                task_date = datetime.strptime(p, "%d.%m").replace(year=datetime.now().year).date()
+                task_date = datetime.strptime(p.strip(), "%d.%m").date().replace(year=datetime.now().year)
 
-        await database.add_task(message.from_user.id, title, task_time, task_date, project_id)
+        await database.add_task(message.from_user.id, title, task_time.strftime("%H:%M"), task_date.isoformat(), project_id)
         msg = f"📝 Задача «{title}» добавлена на {task_date.strftime('%d.%m')} в {task_time.strftime('%H:%M')}"
         if project_id:
             msg += f" в проект «{project_name}»"
@@ -58,17 +68,6 @@ async def save_task(message: Message):
     except Exception as e:
         print("Ошибка сохранения:", e)
         await message.answer("Формат: Название / HH:MM / ДД.ММ / #проект (опционально)")
-
-@dp.message(F.text.startswith("🌟 Добавить задачу"))
-async def add_task_help(message: Message):
-    await message.answer(
-        "📝 Чтобы добавить задачу, напиши её вот так:\n\n"
-        "<code>Прочитать книгу / 18:00</code>\n"
-        "<code>Написать письмо / 19:30 / 17.07</code>\n"
-        "<code>Сходить в бассейн / 14:00 / 20.07 / #работа</code>\n\n"
-        "⏰ Формат: <b>Название / Время / Дата / #проект</b> (дата и проект — по желанию)"
-    )
-
 
 @dp.message(F.text == "📋 Мои задачи")
 async def show_today_tasks(message: Message):
