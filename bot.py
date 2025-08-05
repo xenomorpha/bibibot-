@@ -12,7 +12,7 @@ import database
 main_menu = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text="🌟 Добавить задачу")],
     [KeyboardButton(text="📋 Мои задачи"), KeyboardButton(text="🏁 Выполненные")],
-    [KeyboardButton(text="📊 Прогресс"), KeyboardButton(text="📁 Проекты")],
+    [KeyboardButton(text="📈 Прогресс"), KeyboardButton(text="📁 Проекты")],
     [KeyboardButton(text="🎯 За неделю")]
 ], resize_keyboard=True)
 
@@ -58,6 +58,17 @@ async def save_task(message: Message):
     except Exception as e:
         print("Ошибка сохранения:", e)
         await message.answer("Формат: Название / HH:MM / ДД.ММ / #проект (опционально)")
+
+@dp.message(F.text.startswith("🌟 Добавить задачу"))
+async def add_task_help(message: Message):
+    await message.answer(
+        "📝 Чтобы добавить задачу, напиши её вот так:\n\n"
+        "<code>Прочитать книгу / 18:00</code>\n"
+        "<code>Написать письмо / 19:30 / 17.07</code>\n"
+        "<code>Сходить в бассейн / 14:00 / 20.07 / #работа</code>\n\n"
+        "⏰ Формат: <b>Название / Время / Дата / #проект</b> (дата и проект — по желанию)"
+    )
+
 
 @dp.message(F.text == "📋 Мои задачи")
 async def show_today_tasks(message: Message):
@@ -251,7 +262,7 @@ async def help_command(message: Message):
 📋 <b>Мои задачи</b>
 Список задач на сегодня
 
-🏋️ <b>Выполненные</b>
+🏁 <b>Выполненные</b>
 Список завершённых задач
 
 📈 <b>Прогресс</b>
