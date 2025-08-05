@@ -73,7 +73,7 @@ async def get_tasks_for_now():
         """, current_time, current_date)
 
 async def get_tasks_for_user_today(user_id: int):
-    today = date.today()
+    today = date.today().strftime("%Y-%m-%d")  # 🔧 Преобразуем дату в строку
     pool = await connect()
     async with pool.acquire() as conn:
         return await conn.fetch("""
@@ -81,6 +81,7 @@ async def get_tasks_for_user_today(user_id: int):
             WHERE user_id = $1 AND date = $2 AND completed = 0 AND missed = 0
             ORDER BY time ASC
         """, user_id, today)
+
 
 async def mark_task_done(task_id: int):
     pool = await connect()
