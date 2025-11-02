@@ -12,7 +12,19 @@ if not DATABASE_URL:
 async def connect():
     global _pool
     if _pool is None:
-        _pool = await asyncpg.create_pool(DATABASE_URL, ssl=False)
+        # Создаем SSL контекст для Railway/Render
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        _pool = await asyncpg.create_pool(
+            DATABASE_URL,
+            ssl=ssl_context,  # Изменено с ssl=False на ssl=ssl_context
+            timeout=60,
+            command_timeout=60,
+            min_size=1,
+            max_size=10
+        )
     return _pool
 
 
@@ -242,5 +254,3 @@ async def get_completed_tasks(user_id: int):
             WHERE task_logs.user_id = $1 AND task_logs.action = 'done'
             ORDER BY task_logs.timestamp DESC
         """, user_id)
-
-
